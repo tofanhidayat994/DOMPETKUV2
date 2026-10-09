@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cek Dompetku</title>
+<style>body{font-family:system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0 16px;color:#0F1F17}h1{font-size:20px}h2{font-size:16px;margin-top:22px}li{margin:8px 0;line-height:1.4}.ok{color:#0A7040;font-weight:700}.no{color:#C62828;font-weight:700}code{background:#eef3f0;padding:2px 5px;border-radius:5px;word-break:break-all}button{padding:12px 16px;border-radius:12px;border:0;background:#12A15F;color:#fff;font-weight:700;font-size:15px}pre{background:#eef3f0;padding:10px;border-radius:10px;white-space:pre-wrap;font-size:13px}</style></head><body>
+<h1>Pemeriksaan file Dompetku</h1><p>Alamat folder ini: <code id="base"></code></p><ul id="out"><li>Memeriksa…</li></ul>
+<h2>Tes pembaca struk</h2><p style="font-size:14px">Tombol ini menjalankan pembaca struk yang sama dengan di aplikasi pada gambar contoh. Pertama kali bisa 10–40 detik karena memuat mesin pembaca.</p>
+<button id="tes">Jalankan tes</button><pre id="hasil" style="display:none"></pre>
+<p style="font-size:13px;color:#566">Semua baris harus berawalan ✓. Baris ✗ berarti file itu belum terunggah ke GitHub atau namanya salah (huruf besar/kecil berpengaruh).</p>
+<script>
+const out=document.getElementById('out'),base=new URL('./',location.href);document.getElementById('base').textContent=base.href;
+const row=(ok,t)=>{const li=document.createElement('li');li.innerHTML='<span class="'+(ok?'ok':'no')+'">'+(ok?'✓':'✗')+'</span> '+t;out.appendChild(li)};
+(async()=>{out.innerHTML='';
+ for(const f of ['index.html','manifest.json','sw.js','icon-192.png','icon-512.png','maskable-512.png','tesseract.min.js','worker.min.js','tesseract-core-simd-lstm.wasm.js','tesseract-core-lstm.wasm.js','eng.traineddata.gz']){
+  try{const r=await fetch(f,{method:'HEAD',cache:'no-store'});const kb=r.headers.get('content-length');row(r.ok,'<code>'+f+'</code> — '+(r.ok?'ada'+(kb?' ('+Math.round(kb/1024)+' KB)':''):'HTTP '+r.status+' (tidak ditemukan)'))}catch(e){row(false,'<code>'+f+'</code> — gagal dibuka')}}
+ try{const m=await (await fetch('manifest.json',{cache:'no-store'})).json();
+  row(!!m.name&&!!m.short_name,'Manifest: nama <code>'+(m.name||'-')+'</code>');
+  row((m.icons||[]).some(i=>/512x512/.test(i.sizes)&&i.type==='image/png'),'Manifest: ada ikon PNG 512x512');
+ }catch(e){row(false,'Manifest tidak bisa dibaca sebagai JSON')}
+ row(location.protocol==='https:','Memakai HTTPS');
+ if('serviceWorker' in navigator){try{const reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;row(true,'Service worker terpasang (scope <code>'+reg.scope+'</code>)')}catch(e){row(false,'Service worker gagal terpasang: '+e.message)}}else row(false,'Browser tidak mendukung service worker');
+})();
+document.getElementById('tes').onclick=async()=>{
+ const el=document.getElementById('hasil');el.style.display='block';el.textContent='Memuat mesin pembaca…';const t0=Date.now();
+ try{
+  await new Promise((res,rej)=>{if(window.Tesseract)return res();const s=document.createElement('script');s.src=base.href+'tesseract.min.js';s.onload=res;s.onerror=()=>rej(new Error('tesseract.min.js tidak bisa dimuat'));document.head.appendChild(s)});
+  const w=await Tesseract.createWorker('eng',1,{workerPath:base.href+'worker.min.js',corePath:base.href,langPath:base.href,gzip:true,logger:m=>{el.textContent=m.status+(m.progress?' '+Math.round(m.progress*100)+'%':'')}});
+  await w.setParameters({tessedit_pageseg_mode:'6'});
+  const cv=document.createElement('canvas');cv.width=600;cv.height=260;const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,600,260);c.fillStyle='#111';c.font='bold 30px monospace';
+  ['INDOMARET','04/10/2026 14:32','TOTAL        58.500','TUNAI        60.000','KEMBALI       1.500'].forEach((l,i)=>c.fillText(l,24,48+i*46));
+  const r=await w.recognize(cv);const ok=/58[.,]?500/.test(r.data.text);
+  el.textContent=(ok?'✓ BERHASIL':'✗ Teks terbaca tetapi angka tidak cocok')+' ('+((Date.now()-t0)/1000).toFixed(1)+' detik)\n\nHasil bacaan:\n'+r.data.text;
+  await w.terminate();
+ }catch(e){el.textContent='✗ GAGAL: '+e.message+'\n\nPeriksa baris ✗ di daftar atas.'}
+};
+</script></body></html>
