@@ -1,15 +1,11 @@
-# Dompetku - paket unggah GitHub (versi rata, tanpa folder) + scan struk
+# Dompetku v6 — penyimpanan online (Google)
 
-Semua file ada di SATU tingkat. Seret semuanya sekaligus ke repo (total sekitar 13 MB).
+1. Buat proyek di https://console.firebase.google.com (paket gratis Spark).
+2. Authentication > Sign-in method: aktifkan **Google** (dan **Email/Password** bila mau).
+3. Authentication > Settings > Authorized domains: tambahkan `tofanhidayat994.github.io`.
+4. Firestore Database > Create database (mode produksi), lalu tab Rules: tempel isi `firestore.rules`, Publish.
+5. Project settings > Your apps > Web (</>): daftarkan, salin `firebaseConfig` ke `firebase-config.js`.
+6. Unggah semua berkas ke GitHub (timpa yang lama). Buka `cek.html` — semua baris harus berawalan ✓.
+7. Tutup dan buka aplikasi dua kali (APK tidak perlu dibuat ulang).
 
-File aplikasi: index.html, manifest.json, sw.js, icon-192.png, icon-512.png, maskable-512.png,
-apple-touch-icon.png, _config.yml, cek.html, PANDUAN.md
-File pembaca struk: tesseract.min.js, worker.min.js, tesseract-core-simd-lstm.wasm.js,
-tesseract-core-lstm.wasm.js, eng.traineddata.gz, LISENSI-pihak-ketiga.txt
-
-1. GitHub -> repo Anda -> Add file -> Upload files -> seret SEMUA file -> Commit changes.
-   (Jika file lama bernama sama sudah ada, GitHub akan menimpanya.)
-2. Settings -> Pages -> Deploy from a branch -> main / (root).
-3. Buka <alamat-aplikasi>/cek.html di Chrome. Semua baris harus berawalan centang,
-   lalu tekan "Jalankan tes" untuk mencoba pembaca struk.
-4. APK tidak perlu dibuat ulang: buka aplikasi dua kali setelah unggah.
+Catatan: Google dan email+sandi adalah dua akun terpisah (data tidak otomatis sama). Di iPhone buka dari ikon layar utama.

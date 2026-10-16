@@ -6,6 +6,11 @@
 <title>Dompetku</title>
 <meta name="description" content="Catat keuangan dalam hitungan detik.">
 <meta name="ocr-engine" content="tesseract-local">
+<script src="firebase-config.js"></script>
+<script src="firebase-app-compat.js"></script>
+<script src="firebase-auth-compat.js"></script>
+<script src="firebase-firestore-compat.js"></script>
+<script>window.FB_CFG_OK=!!(window.FIREBASE_CONFIG&&/^AIza/.test(window.FIREBASE_CONFIG.apiKey||'')&&window.FIREBASE_CONFIG.projectId);window.FB_ON=!!(window.FB_CFG_OK&&window.firebase&&firebase.initializeApp);window.FB_ERR=(window.FB_CFG_OK&&!window.FB_ON)?'Berkas Firebase belum terunggah lengkap':''</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0A7040">
 <meta name="mobile-web-app-capable" content="yes">
@@ -178,6 +183,9 @@ input,select{font:inherit;color:inherit}
 .balprev{font-size:12.5px;text-align:center;margin:0 0 10px;min-height:18px}
 button.hd-lbl{padding:0;background:none;color:#fff;text-align:left;font:inherit;font-size:12.5px;font-weight:600;opacity:.92;min-height:30px}
 .neg{color:var(--red)!important}
+.ggl{width:100%;min-height:56px;border-radius:17px;background:#fff;color:#1F2A24;border:1.5px solid #DADCE0;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 4px 14px rgba(15,60,35,.10);transition:transform .15s}
+.ggl:active{transform:scale(.985)}.ggl:disabled{opacity:.6}
+.ggl svg{width:22px;height:22px}
 /* ===== HEADER BERANDA ===== */
 .hd{position:relative;overflow:hidden;color:#fff;border-radius:24px;padding:16px 16px 14px;margin-bottom:14px;background:linear-gradient(150deg,#075A37 0%,#0A7040 42%,#12A15F 100%);box-shadow:0 12px 28px rgba(10,112,64,.30)}
 .hd::before{content:"";position:absolute;width:230px;height:230px;right:-70px;top:-90px;border-radius:50%;border:1px solid rgba(255,255,255,.14);box-shadow:0 0 0 38px rgba(255,255,255,.04),0 0 0 76px rgba(255,255,255,.025);pointer-events:none}
@@ -433,7 +441,7 @@ function histBody(){
   `<div class="grid2"><div class="card" style="background:var(--gsoft)"><div class="sm muted">Pemasukan</div><div class="b g">${money(inc)}</div></div><div class="card" style="background:var(--rsoft)"><div class="sm muted">Pengeluaran</div><div class="b r">${money(out)}</div></div></div>`+
   (l.length?Object.keys(groups).sort().reverse().map(d=>`<div class="dgrp">${dlabel(d)}</div><div class="card" style="padding:2px 14px">${groups[d].map(txRow).join('')}</div>`).join(''):`<div class="empty">${S.tx.length?'<b>Tidak ada transaksi</b>Coba ubah kata kunci, filter, atau bulan.':'<b>Belum ada transaksi</b>Ketuk tombol + untuk mencatat yang pertama.'}</div>`);
 }
-function history(){
+function historyView(){
   const n=(UI.fType!=='all')+(UI.fCat!=='all')+(UI.fAcc!=='all')+(UI.fBy&&UI.fBy!=='all'?1:0);
   return head('Riwayat Transaksi','',false)+
   `<div class="row" style="margin-bottom:12px"><label class="search">${svg('search')}<input id="q" type="search" placeholder="Cari catatan, kategori, nominal…" value="${esc(UI.q)}" autocomplete="off"></label><button class="ib" style="height:46px;width:46px;${n?'background:var(--g1);color:#fff':''}" data-act="filter" aria-label="Filter">${svg('filter')}</button></div>`+
@@ -509,7 +517,7 @@ function settings(){
   const r=(t,d,x)=>`<div class="item"><div class="f1"><div class="b">${t}</div><div class="sm muted">${d}</div></div>${x}</div>`;
   return head('Pengaturan')+
   `<div class="card row"><div class="ico" style="background:var(--g1);color:#fff;font-weight:800;width:52px;height:52px;border-radius:50%">${esc((S.user?S.user.name:'TH').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase())}</div><div class="f1"><div class="b" style="font-size:16px">${esc(S.user?S.user.name:'Tofan Hidayat')}</div><div class="sm muted">${S.user&&S.user.username?'@'+esc(S.user.username)+' • ':''}${esc(S.user?S.user.email:'')}</div></div></div>
-  <div class="card" style="padding:2px 14px">${r('Perangkat ini milik',S.device?'Nama ini dicantumkan di transaksi yang Anda catat':'Belum diatur',`<button class="chip" data-act="askDev">${esc(S.device||'Atur')}</button>`)}${r('Tema gelap','Nyaman dipakai malam hari',tg(dark,'tDark'))}${r('Masuk dengan sidik jari','Lewati ketik kata sandi di perangkat ini',tg(!!S.bioEnabled,'tBio'))}${r('Sembunyikan saldo','Tampilkan Rp •••• di semua layar',tg(S.hide,'toggleHide'))}${r('Buka langsung ke pencatatan','Aplikasi dibuka di layar Tambah Transaksi',tg(S.openAdd,'tOpen'))}${r('Sinkronisasi data',(Cloud.db?(Cloud.readonly?'Hanya-baca: tidak bisa menyimpan':'Tersinkron otomatis antar perangkat'):'Mode lokal: tidak tersinkron'),`<button class="chip" data-act="sync">Sinkron</button>`)}</div>
+  <div class="card" style="padding:2px 14px">${r('Perangkat ini milik',S.device?'Nama ini dicantumkan di transaksi yang Anda catat':'Belum diatur',`<button class="chip" data-act="askDev">${esc(S.device||'Atur')}</button>`)}${r('Tema gelap','Nyaman dipakai malam hari',tg(dark,'tDark'))}${window.FB_ON?r('Unggah data dari HP ini','Salin catatan lokal lama ke akun Anda',`<button class="chip" data-act="fbImportAgain">Unggah</button>`):r('Masuk dengan sidik jari','Lewati ketik kata sandi di perangkat ini',tg(!!S.bioEnabled,'tBio'))}${r('Sembunyikan saldo','Tampilkan Rp •••• di semua layar',tg(S.hide,'toggleHide'))}${r('Buka langsung ke pencatatan','Aplikasi dibuka di layar Tambah Transaksi',tg(S.openAdd,'tOpen'))}${r('Sinkronisasi data',(Cloud.db?(Cloud.readonly?'Hanya-baca: tidak bisa menyimpan':'Tersinkron otomatis antar perangkat'):'Mode lokal: tidak tersinkron'),`<button class="chip" data-act="sync">Sinkron</button>`)}</div>
   <div class="sec">Hasil uji coba kecepatan</div>
   <div class="card"><div class="grid2" style="margin-bottom:8px"><div><div class="sm muted">Median waktu catat</div><div class="xb" style="font-size:22px">${med===null?'–':med.toFixed(1).replace('.',',')+' dtk'}</div></div><div><div class="sm muted">Selesai ≤ 10 dtk</div><div class="xb" style="font-size:22px">${ok===null?'–':ok+'%'}</div></div></div><div class="note">Waktu dihitung sejak layar Tambah Transaksi dibuka sampai Simpan, dari ${last.length} pencatatan terakhir. Target: ≤ 10 detik.</div></div>
   <button class="btn danger" data-act="reset" style="margin-bottom:10px">Hapus semua data akun ini</button><button class="btn sec2" data-act="logout">Keluar dari akun</button>`;
@@ -587,7 +595,7 @@ function onboard(){
 /* ---------- render ---------- */
 const SUB=['investasi','hutang','tujuan','laporan','settings'];
 const TABS=[['home','home','Beranda'],['accounts','wallet','Akun'],['history','swap','Transaksi'],['budget','pie','Budget'],['more','grid','Lainnya']];
-const VIEW={login,home,accounts,history,budget,more,investasi,hutang,tujuan,laporan,settings,add};
+const VIEW={login,home,accounts,history:historyView,budget,more,investasi,hutang,tujuan,laporan,settings,add};
 let timerId=null;
 function render(keepScroll){
   const sc=$('#screen'), st=sc.scrollTop;
@@ -629,7 +637,7 @@ function accPicker(cur,onPick){
 S.users=S.users||[];
 S.users.forEach(u=>{if(!u.username){let b=(u.email.split('@')[0].replace(/[^A-Za-z0-9_.]/g,'')||'user').slice(0,16),n=b,i=1;while(S.users.some(x=>x!==u&&(x.username||'').toLowerCase()===n.toLowerCase()))n=b+(++i);u.username=n}});
 if(S.user){const m=S.users.find(u=>u.email===S.user.email);if(m){S.user.username=m.username;S.user.name=m.name}}
-if(S.user&&!(window.claude&&window.claude.use)&&!S.users.some(u=>u.email===S.user.email))S.user=null;   /* dengan cloud, akun diverifikasi saat db siap */
+if(S.user&&!window.FB_ON&&!(window.claude&&window.claude.use)&&!S.users.some(u=>u.email===S.user.email))S.user=null;   /* dengan cloud, akun diverifikasi saat db siap */
 UI.L={mode:S.users.length?'in':'reg',remember:true,email:'',pass:'',pass2:'',name:'',notice:''};
 UI.lock={n:0,until:0};
 async function hashPw(email,pw){const str='dompetku|'+email+'|'+pw;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of str)h=((h<<5)+h+c.charCodeAt(0))|0;return 'x'+h}}
@@ -814,7 +822,7 @@ function softRender(){clearTimeout(Cloud.rt);Cloud.rt=setTimeout(()=>{
 document.addEventListener('focusout',()=>{setTimeout(()=>{if(UI.stale)softRender()},120)});
 Cloud.detach=function(){Cloud.unsubs.forEach(u=>{try{u()}catch(e){}});Cloud.unsubs=[];Cloud.uid=null;Cloud.synced={};Cloud.pend=new Map();Cloud.ready={};Cloud.readonly=false};
 Cloud.attach=async function(){
-  Cloud.detach();Cloud.uid=await uidOf(S.user.email);
+  Cloud.detach();Cloud.uid=window.FB_ON?FB.uid():await uidOf(S.user.email);
   const base='accts/'+Cloud.uid+'/';
   const all=Object.keys(COLL).map(name=>new Promise(res=>{
     const un=Cloud.db.collection(base+name).onSnapshot(snap=>{Cloud.onSnap(name,snap);res()},e=>{Cloud.err=e&&e.code;res()});
@@ -1299,6 +1307,130 @@ async function runScanLocal(file){
 const _aSave1=ACT.aSave;
 ACT.aSave=function(){const A=UI.A,n0=S.tx.length;_aSave1.apply(this,arguments);
   if(A&&A.scanned&&A.scanInfo&&A.scanInfo.merchant&&S.tx.length>n0){S.merch=S.merch||{};S.merch[ocrNorm(A.scanInfo.merchant)]={cat:A.cat,acc:A.acc};save()}};
+
+/* =============== LOGIN GOOGLE + PENYIMPANAN ONLINE (Firebase) =============== */
+const FB={app:null,auth:null,db:null,
+  uid:()=>(FB.auth&&FB.auth.currentUser)?FB.auth.currentUser.uid:null,
+  async init(){
+    FB.app=firebase.apps&&firebase.apps.length?firebase.app():firebase.initializeApp(window.FIREBASE_CONFIG);
+    FB.auth=firebase.auth();FB.db=firebase.firestore();
+    try{FB.db.settings({experimentalAutoDetectLongPolling:true,ignoreUndefinedProperties:true,merge:true})}catch(e){}
+    try{await FB.db.enablePersistence({synchronizeTabs:true})}catch(e){}   /* cache offline; gagal = tetap jalan online */
+    const u=await new Promise(res=>{let done=false;const t=setTimeout(()=>{if(!done){done=true;res(FB.auth.currentUser)}},6000);const un=FB.auth.onAuthStateChanged(x=>{if(!done){done=true;clearTimeout(t);try{un()}catch(e){}res(x)}})});
+    if(u){const pr=await FB.profile(u);S.user={name:pr.name,username:pr.username,email:u.email||'',temp:false};save()}
+    else if(S.user){S.user=null}
+    return FB.db;
+  },
+  derive(name,email){const b=String(name||'').split(/\s+/)[0]||String(email||'').split('@')[0]||'pengguna';return b.replace(/[^A-Za-z0-9_.]/g,'').slice(0,20)||'pengguna'},
+  async profile(u){
+    let pr={};try{const d=await Promise.race([FB.db.doc('users/'+u.uid).get(),new Promise((_,r)=>setTimeout(()=>r(new Error('t')),3500))]);if(d&&d.exists)pr=d.data()||{}}catch(e){}
+    const name=pr.name||u.displayName||(u.email||'').split('@')[0]||'Pengguna';
+    return {name,username:pr.username||FB.derive(name,u.email)};
+  },
+  async finish(u,extra){
+    let pr=await FB.profile(u);
+    if(extra){pr={name:extra.name||pr.name,username:extra.username||pr.username};try{await FB.db.doc('users/'+u.uid).set({name:pr.name,username:pr.username,email:u.email||''},{merge:true})}catch(e){}}
+    else{try{const d=await FB.db.doc('users/'+u.uid).get();if(!d.exists)await FB.db.doc('users/'+u.uid).set({name:pr.name,username:pr.username,email:u.email||''},{merge:true})}catch(e){}}
+    await enter({name:pr.name,username:pr.username,email:u.email||''},true);
+    FB.offerImport();
+  },
+  offerImport(){
+    try{
+      const uid=FB.uid();S.imported=S.imported||{};if(S.imported[uid])return;
+      if(!S.device){UI.importWait=true;return}
+      if(S.acc.length||S.tx.length)return;
+      const cand=Object.values(S.store||{}).filter(x=>x&&((x.acc||[]).length+(x.tx||[]).length)>0).sort((a,b)=>((b.acc||[]).length+(b.tx||[]).length)-((a.acc||[]).length+(a.tx||[]).length))[0];
+      if(!cand)return;
+      UI.importCand=cand;
+      sheet(`<h3>Unggah data dari HP ini?</h3><p class="muted" style="line-height:1.5">Di HP ini ada catatan yang tersimpan lokal: <b>${(cand.acc||[]).length} akun</b> dan <b>${(cand.tx||[]).length} transaksi</b>. Unggah ke akun Google Anda supaya tampil di semua perangkat?</p><div class="row"><button class="btn sec2" data-act="fbSkipImport">Nanti</button><button class="btn" data-act="fbImport">Unggah</button></div>`);
+    }catch(e){}
+  },
+  err(e){
+    const c=(e&&e.code)||'';
+    return ({
+     'auth/popup-blocked':'Jendela masuk Google diblokir. Izinkan pop-up untuk aplikasi ini, lalu coba lagi.',
+     'auth/popup-closed-by-user':'Jendela masuk Google ditutup sebelum selesai.',
+     'auth/cancelled-popup-request':'Permintaan masuk dibatalkan. Coba lagi.',
+     'auth/unauthorized-domain':'Domain '+location.hostname+' belum didaftarkan di Firebase (Authentication > Settings > Authorized domains).',
+     'auth/operation-not-supported-in-this-environment':'Browser ini tidak mendukung login Google di dalam aplikasi. Pakai email dan kata sandi.',
+     'auth/operation-not-allowed':'Metode masuk ini belum diaktifkan di Firebase Console (Authentication > Sign-in method).',
+     'auth/network-request-failed':'Tidak ada koneksi internet. Coba lagi saat online.',
+     'auth/too-many-requests':'Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.',
+     'auth/invalid-credential':'Email atau kata sandi salah, atau akun belum terdaftar.',
+     'auth/invalid-login-credentials':'Email atau kata sandi salah, atau akun belum terdaftar.',
+     'auth/wrong-password':'Kata sandi salah.','auth/user-not-found':'Email ini belum terdaftar. Silakan daftar terlebih dahulu.',
+     'auth/email-already-in-use':'Email ini sudah terdaftar. Silakan masuk.','auth/weak-password':'Kata sandi terlalu lemah (minimal 8 karakter, huruf + angka).',
+     'auth/invalid-email':'Format email belum benar.','auth/user-disabled':'Akun ini dinonaktifkan.',
+     'auth/account-exists-with-different-credential':'Email ini sudah dipakai dengan cara masuk lain. Masuk dengan cara yang dulu dipakai.'
+    })[c]||('Gagal masuk ('+(c||'error')+'). Coba lagi.');
+  }
+};
+const GICON='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
+if(window.FB_ON){
+  const _vl=VIEW.login;
+  VIEW.login=()=>{
+    if(UI.loading)return _vl();
+    const L=UI.L;
+    const gblock=`<button class="ggl" id="ggo" data-act="gSign">${GICON}Masuk dengan Google</button><p class="hint" style="text-align:center;margin:10px 0 0">Catatan tersimpan online di akun Google Anda dan tampil di semua HP yang memakai akun yang sama.</p><div class="lerr" id="lerr" role="alert" style="text-align:center"></div>`;
+    if(!L.mail){
+      return `<div class="lx">${DECO}<div class="hero2 a1"><div class="mono">${svg('wallet')}</div><h1>Dompetku</h1><p class="tag">Catatan keuangan pribadi, tertata dengan tenang.</p><div class="chips2"><span class="chip2">☁️ Tersimpan online</span><span class="chip2">Untuk berdua</span></div></div>
+      <section class="sheet2 a2"><h2>Selamat <span>datang</span></h2><p class="sub">Masuk sekali dengan akun Google. Di HP lain, pakai akun Google yang sama dan catatan langsung muncul.</p>
+      ${L.notice?`<div class="nt" role="status">✓ ${esc(L.notice)}</div>`:''}${window.FB_ERR?`<div class="nt" style="color:var(--red);background:var(--rsoft)">${esc(window.FB_ERR)}</div>`:''}
+      <div style="margin-top:18px">${gblock}</div>
+      <div class="dv">atau</div><button class="ghost" data-act="lMail">Pakai email dan kata sandi</button>
+      <p class="hint" style="text-align:center;margin-top:12px">Pilih satu cara masuk dan pakai terus di semua HP. Google dan email dianggap dua akun terpisah.</p></section></div>`;
+    }
+    return _vl().replace('<!--ST-->','<span class="chip2">☁️ Tersimpan online</span>').replace('<div class="fx ',`${gblock}<div class="dv">atau dengan email</div><div class="fx `).replace('<div class="sw">','<div class="sw"><button class="lk" data-act="lMail" style="margin-right:8px">← Kembali</button>');
+  };
+  Object.assign(ACT,{
+    lMail:()=>{UI.L.mail=!UI.L.mail;UI.L.notice='';render()},
+    lMode:()=>{const L=UI.L;UI.L={mode:L.mode==='reg'?'in':'reg',remember:true,email:L.email,pass:'',pass2:'',name:'',username:'',notice:'',mail:true};render()},
+    gSign:async()=>{
+      const b=$('#ggo'),er=m=>{const e=$('#lerr');if(e)e.textContent=m};
+      if(b)b.disabled=true;er('');
+      try{
+        const pv=new firebase.auth.GoogleAuthProvider();pv.setCustomParameters({prompt:'select_account'});
+        const cred=await FB.auth.signInWithPopup(pv);
+        if(b){b.disabled=true}
+        await FB.finish(cred.user);
+      }catch(e){er(FB.err(e));if(b)b.disabled=false}
+    },
+    lSubmit:async()=>{
+      const L=UI.L,reg=L.mode==='reg',email=L.email.trim().toLowerCase(),uname=(L.username||'').trim();
+      const err=(m,f)=>{const e=$('#lerr');if(e)e.textContent=m;['fe','fp','fp2','fu'].forEach(i=>{const x=$('#'+i);if(x)x.classList.remove('bad')});if(f&&$('#'+f))$('#'+f).classList.add('bad')};
+      const busy=t=>{const b=$('#lgo');if(b){b.disabled=true;b.textContent=t}},idle=()=>{const b=$('#lgo');if(b){b.disabled=false;b.textContent=reg?'Buat akun':'Masuk'}};
+      if(reg&&!L.name.trim())return err('Isi nama lengkap Anda.');
+      if(reg&&uname&&!/^[A-Za-z0-9_.]{3,20}$/.test(uname))return err('Nama pengguna 3–20 karakter: huruf, angka, titik, atau garis bawah (_), tanpa spasi.','fu');
+      if(!/^\S+@\S+\.\S+$/.test(email))return err('Format email belum benar, contoh: nama@email.com','fe');
+      if(!L.pass)return err('Isi kata sandi Anda.','fp');
+      try{
+        if(reg){
+          if(L.pass.length<8||!/[A-Za-z]/.test(L.pass)||!/\d/.test(L.pass))return err('Kata sandi minimal 8 karakter dan mengandung huruf serta angka.','fp');
+          if(L.pass!==L.pass2)return err('Konfirmasi kata sandi tidak sama.','fp2');
+          err('');busy('Membuat akun…');
+          const cred=await FB.auth.createUserWithEmailAndPassword(email,L.pass);
+          try{await cred.user.updateProfile({displayName:L.name.trim()})}catch(e){}
+          await FB.finish(cred.user,{name:L.name.trim(),username:uname||FB.derive(L.name,email)});
+        }else{
+          err('');busy('Memeriksa…');
+          const cred=await FB.auth.signInWithEmailAndPassword(email,L.pass);
+          await FB.finish(cred.user);
+        }
+      }catch(e){idle();err(FB.err(e),(e&&/password|credential/.test(e.code||''))?'fp':'fe')}
+    },
+    lForgot:()=>sheet(`<h3>Atur ulang kata sandi</h3><p class="sm muted" style="margin:0 0 12px">Masukkan email akun Anda. Kami kirim tautan untuk membuat kata sandi baru. Berlaku untuk akun email, bukan akun Google.</p><label class="field" style="margin-bottom:6px"><input id="fem" type="email" inputmode="email" placeholder="nama@email.com" value="${esc(UI.L.email)}"></label><div class="lerr" id="ferr" role="alert"></div><button class="btn" data-act="lSendReset">Kirim tautan</button>`),
+    lSendReset:async()=>{const v=$('#fem').value.trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(v)){$('#ferr').textContent='Format email belum benar.';return}
+      try{await FB.auth.sendPasswordResetEmail(v);closeSheet();toast('Jika email terdaftar, tautan sudah dikirim ke '+v)}catch(e){$('#ferr').textContent=FB.err(e)}},
+    fbImport:()=>{const c=UI.importCand;if(!c)return closeSheet();
+      ['acc','tx','budget','inv','debt','goals'].forEach(k=>{if(c[k]!==undefined)S[k]=JSON.parse(JSON.stringify(c[k]))});
+      legacyB0();S.imported=S.imported||{};S.imported[FB.uid()]=true;save();closeSheet();render();toast('Data dari HP ini diunggah ke akun Anda')},
+    setDev:d=>{S.device=d.n;save();closeSheet();render(true);toast('Perangkat ini: '+d.n);if(UI.importWait){UI.importWait=false;setTimeout(()=>FB.offerImport(),400)}},
+    setDevCustom:()=>{const n=$('#devn').value.trim();if(!n){toast('Pilih atau ketik nama');return}S.device=n;save();closeSheet();render(true);toast('Perangkat ini: '+n);if(UI.importWait){UI.importWait=false;setTimeout(()=>FB.offerImport(),400)}},
+    fbSkipImport:()=>{closeSheet();toast('Bisa diunggah lagi lewat Pengaturan')},
+    fbImportAgain:()=>{if(S.imported)delete S.imported[FB.uid()];FB.offerImport();if(!$('#sheet').classList.contains('on'))toast('Tidak ada data lokal yang bisa diunggah')},
+    doLogout:async()=>{const e=S.user&&S.user.email;save();Cloud.detach();try{await FB.auth.signOut()}catch(x){}S.user=null;clearData();save();closeSheet();UI.L={mode:'in',remember:true,email:e||'',pass:'',pass2:'',name:'',username:'',notice:'',mail:false};UI.screen='login';render()}
+  });
+}
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(el&&ACT[el.dataset.act])ACT[el.dataset.act](el.dataset,el)});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&UI.screen==='login'&&e.target.tagName==='INPUT'){e.preventDefault();ACT.lSubmit()}});
 document.addEventListener('input',e=>{
@@ -1315,11 +1447,12 @@ document.addEventListener('input',e=>{
 /* ---------- start ---------- */
 applyTheme();
 if(S.user&&S.user.temp){S.user=null}
-if(S.user){UI.screen='login';UI.loading=true}else{UI.screen='login'}
+if(S.user||window.FB_ON){UI.screen='login';UI.loading=true}else{UI.screen='login'}
 render();
 Cloud.initP=(async()=>{
   let db=null;
   try{if(window.claude&&window.claude.use)db=await window.claude.use('db')}catch(e){}
+  if(!db&&window.FB_ON){try{db=await FB.init()}catch(e){console.error(e);window.FB_ERR='Firebase gagal dimulai: '+((e&&e.code)||e)}}
   Cloud.db=db||null;
   if(!Cloud.db&&S.user&&!S.users.some(u=>u.email===S.user.email)){S.user=null}
   if(Cloud.db&&UI.L.mode==='reg'&&!UI.L.name&&!UI.L.email)UI.L.mode='in';   /* di perangkat baru, akun mungkin sudah terdaftar di perangkat lain */

@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catatan keuangan: hanya pemilik akun (uid yang sama) yang boleh membaca/menulis
+    match /accts/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Profil (nama dan nama pengguna)
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Selain itu: ditolak
+  }
+}

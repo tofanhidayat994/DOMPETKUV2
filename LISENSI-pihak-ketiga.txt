@@ -3,3 +3,6 @@ Komponen pembaca struk (OCR) dalam paket ini:
 - Tesseract.js-core (tesseract-core-*.wasm.js) - lisensi Apache 2.0 - https://github.com/naptha/tesseract.js-core
 - Data bahasa Inggris (eng.traineddata.gz, varian best_int) - lisensi Apache 2.0 - https://github.com/tesseract-ocr/tessdata_best
 Berkas-berkas ini tidak diubah.
+
+
+Firebase JS SDK (firebase-*-compat.js) v10.14.1 — Google LLC, lisensi Apache-2.0. https://github.com/firebase/firebase-js-sdk

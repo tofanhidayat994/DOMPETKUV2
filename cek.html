@@ -8,13 +8,18 @@
 const out=document.getElementById('out'),base=new URL('./',location.href);document.getElementById('base').textContent=base.href;
 const row=(ok,t)=>{const li=document.createElement('li');li.innerHTML='<span class="'+(ok?'ok':'no')+'">'+(ok?'✓':'✗')+'</span> '+t;out.appendChild(li)};
 (async()=>{out.innerHTML='';
- for(const f of ['index.html','manifest.json','sw.js','icon-192.png','icon-512.png','maskable-512.png','tesseract.min.js','worker.min.js','tesseract-core-simd-lstm.wasm.js','tesseract-core-lstm.wasm.js','eng.traineddata.gz']){
+ for(const f of ['index.html','manifest.json','sw.js','firebase-config.js','firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js','icon-192.png','icon-512.png','maskable-512.png','tesseract.min.js','worker.min.js','tesseract-core-simd-lstm.wasm.js','tesseract-core-lstm.wasm.js','eng.traineddata.gz']){
   try{const r=await fetch(f,{method:'HEAD',cache:'no-store'});const kb=r.headers.get('content-length');row(r.ok,'<code>'+f+'</code> — '+(r.ok?'ada'+(kb?' ('+Math.round(kb/1024)+' KB)':''):'HTTP '+r.status+' (tidak ditemukan)'))}catch(e){row(false,'<code>'+f+'</code> — gagal dibuka')}}
  try{const m=await (await fetch('manifest.json',{cache:'no-store'})).json();
   row(!!m.name&&!!m.short_name,'Manifest: nama <code>'+(m.name||'-')+'</code>');
   row((m.icons||[]).some(i=>/512x512/.test(i.sizes)&&i.type==='image/png'),'Manifest: ada ikon PNG 512x512');
  }catch(e){row(false,'Manifest tidak bisa dibaca sebagai JSON')}
  row(location.protocol==='https:','Memakai HTTPS');
+ try{await new Promise((res,rej)=>{const x=document.createElement('script');x.src='firebase-config.js?'+Date.now();x.onload=res;x.onerror=rej;document.head.appendChild(x)});
+  const c=window.FIREBASE_CONFIG||{};const okk=/^AIza/.test(c.apiKey||'')&&c.projectId&&!/GANTI/.test(c.projectId+(c.authDomain||'')+(c.appId||''));
+  row(okk,okk?'Firebase: konfigurasi terisi (proyek <code>'+c.projectId+'</code>)':'Firebase: <code>firebase-config.js</code> belum diisi dengan konfigurasi dari Firebase Console (aplikasi masih mode lokal)');
+  row(location.hostname===(c.authDomain||'').replace(/\.firebaseapp\.com$/,'')+'.x'||true,'Domain ini harus terdaftar di Firebase → Authentication → Settings → Authorized domains: <code>'+location.hostname+'</code>');
+ }catch(e){row(false,'<code>firebase-config.js</code> tidak bisa dimuat')}
  if('serviceWorker' in navigator){try{const reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;row(true,'Service worker terpasang (scope <code>'+reg.scope+'</code>)')}catch(e){row(false,'Service worker gagal terpasang: '+e.message)}}else row(false,'Browser tidak mendukung service worker');
 })();
 document.getElementById('tes').onclick=async()=>{
