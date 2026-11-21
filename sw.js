@@ -1,4 +1,4 @@
-const VER='dompetku-v7';
+const VER='dompetku-v8';
 const SHELL=['./','index.html','manifest.json','icon-192.png','icon-512.png','maskable-512.png','firebase-config.js','firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VER).then(c=>Promise.allSettled(SHELL.map(u=>c.add(u)))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==VER).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
